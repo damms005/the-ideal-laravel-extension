@@ -1,10 +1,10 @@
 {
   "name": "the-ideal-laravel-extension",
   "displayName": "The Ideal Laravel Extension",
-  "description": "The best companions extension for the official Laravel extension",
+  "description": "The best companion extension for the official Laravel extension",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
@@ -36,7 +36,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.100.0",
+    "@types/vscode": "^1.90.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
