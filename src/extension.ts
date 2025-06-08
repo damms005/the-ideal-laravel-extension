@@ -1,26 +1,81 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "the-ideal-laravel-extension" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('the-ideal-laravel-extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from The Ideal Laravel Extension!');
+	const loginDisposable = vscode.commands.registerCommand('the-ideal-laravel-extension.openLogin', () => {
+		openLoginWebview(context);
 	});
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(loginDisposable);
 }
 
-// This method is called when your extension is deactivated
+function openLoginWebview(context: vscode.ExtensionContext) {
+	const panel = vscode.window.createWebviewPanel(
+		'loginForm',
+		'Login Form',
+		vscode.ViewColumn.One,
+		{
+			enableScripts: true,
+			localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
+		}
+	);
+
+	panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri);
+
+	panel.webview.onDidReceiveMessage(
+		async message => {
+			switch (message.type) {
+				case 'submit':
+					const { email, password } = message.payload;
+					const result = await vscode.window.showInformationMessage(
+						`Login attempt with email: ${email}`,
+						'OK'
+					);
+
+					if (result === 'OK') {
+						panel.webview.postMessage({ type: 'submitted' });
+					}
+					break;
+			}
+		},
+		undefined,
+		context.subscriptions
+	);
+}
+
+function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+	const mediaPath = vscode.Uri.joinPath(extensionUri, 'media');
+	const indexPath = vscode.Uri.joinPath(mediaPath, 'index.html');
+
+	try {
+		let html = fs.readFileSync(indexPath.fsPath, 'utf8');
+
+		const mediaUri = webview.asWebviewUri(mediaPath);
+
+		html = html.replace(/src="\.?\/?assets\//g, `src="${mediaUri}/assets/`);
+		html = html.replace(/href="\.?\/?assets\//g, `href="${mediaUri}/assets/`);
+
+		const cspSource = webview.cspSource;
+		const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; script-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; font-src ${cspSource};">`;
+
+		html = html.replace('<head>', `<head>\n\t${csp}`);
+
+		return html;
+	} catch (error) {
+		return `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline';">
+	<title>Login Form</title>
+</head>
+<body>
+	<h1>Login Form Not Found</h1>
+	<p>Please build the Vue application first by running the build script.</p>
+</body>
+</html>`;
+	}
+}
+
 export function deactivate() {}

@@ -14,15 +14,17 @@
   "contributes": {
     "commands": [
       {
-        "command": "the-ideal-laravel-extension.helloWorld",
-        "title": "Hello World"
+        "command": "the-ideal-laravel-extension.openLogin",
+        "title": "Laravel: Open Login"
       }
     ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
+    "build:ui": "npm --prefix ui run build",
+    "watch": "npm-run-all -p watch:ui watch:esbuild",
+    "watch:ui": "chokidar \"ui/src/**/*.*\" -c \"npm run build:ui\" --initial",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "package": "npm run check-types && npm run lint && node esbuild.js --production",
@@ -44,6 +46,7 @@
     "npm-run-all": "^4.1.5",
     "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "chokidar-cli": "^3.0.0"
   }
 }
