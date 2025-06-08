@@ -10,13 +10,14 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function openLoginWebview(context: vscode.ExtensionContext) {
+
 	const panel = vscode.window.createWebviewPanel(
 		'loginForm',
 		'Login Form',
-		vscode.ViewColumn.One,
+		vscode.ViewColumn.Two,
 		{
 			enableScripts: true,
-			localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
+			localResourceRoots: [context.extensionUri],
 		}
 	);
 
@@ -44,38 +45,59 @@ function openLoginWebview(context: vscode.ExtensionContext) {
 }
 
 function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri): string {
-	const mediaPath = vscode.Uri.joinPath(extensionUri, 'media');
-	const indexPath = vscode.Uri.joinPath(mediaPath, 'index.html');
+	const vueOutputPath = vscode.Uri.joinPath(extensionUri, 'ui', 'dist');
+	const assetsPath = vscode.Uri.joinPath(vueOutputPath, 'assets');
 
-	try {
-		let html = fs.readFileSync(indexPath.fsPath, 'utf8');
+	const assetsDir = fs.readdirSync(assetsPath.fsPath);
 
-		const mediaUri = webview.asWebviewUri(mediaPath);
-
-		html = html.replace(/src="\.?\/?assets\//g, `src="${mediaUri}/assets/`);
-		html = html.replace(/href="\.?\/?assets\//g, `href="${mediaUri}/assets/`);
-
-		const cspSource = webview.cspSource;
-		const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; script-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; font-src ${cspSource};">`;
-
-		html = html.replace('<head>', `<head>\n\t${csp}`);
-
-		return html;
-	} catch (error) {
-		return `<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline';">
-	<title>Login Form</title>
-</head>
-<body>
-	<h1>Login Form Not Found</h1>
-	<p>Please build the Vue application first by running the build script.</p>
-</body>
-</html>`;
+	const jsFileName = assetsDir.find(file => file.startsWith('index-') && file.endsWith('.js'));
+	if (!jsFileName) {
+		throw new Error('Could not find main JS file in assets directory');
 	}
+
+	const cssFileName = assetsDir.find(file => file.startsWith('index-') && file.endsWith('.css'));
+	if (!cssFileName) {
+		throw new Error('Could not find main CSS file in assets directory');
+	}
+
+	const jsFile = webview.asWebviewUri(vscode.Uri.joinPath(assetsPath, jsFileName));
+	const cssFile = webview.asWebviewUri(vscode.Uri.joinPath(assetsPath, cssFileName));
+
+	const faviconUri = webview.asWebviewUri(
+		vscode.Uri.joinPath(vueOutputPath, 'favicon.ico')
+	);
+
+	/**
+		 * Tailwindcss uses svg loaded from data:image..., at least for checkboxes.
+		 */
+	const tailwindcss = 'data:'
+
+	const nonce1 = getNonce();
+	const nonce2 = getNonce();
+
+	return `<!DOCTYPE html>
+					<html lang="en">
+						<head>
+							<meta charset="UTF-8">
+							<meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src https://fonts.googleapis.com; img-src ${webview.cspSource} ${tailwindcss}; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce1}' 'nonce-${nonce2}';">
+							<link rel="stylesheet" href="${cssFile}">
+						</head>
+						<body>
+							<div id="app"></div>
+							loaded
+							<script nonce="${nonce2}" type="module" src="${jsFile}"></script>
+						</body>
+					</html>`;
 }
 
-export function deactivate() {}
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+}
+
+export function deactivate() { }

@@ -12,7 +12,7 @@
           placeholder="Enter your email"
         />
       </div>
-      
+
       <div class="form-group">
         <label for="password">Password:</label>
         <input
@@ -23,7 +23,7 @@
           placeholder="Enter your password"
         />
       </div>
-      
+
       <button type="submit" class="submit-btn">
         Submit
       </button>
