@@ -79,16 +79,16 @@ async function main() {
 	}
 
 	// Copy Vue dist to media directory
-	console.log('Copying Vue dist to media directory...');
-	const uiDistPath = path.join(__dirname, 'ui', 'dist');
-	const mediaPath = path.join(__dirname, 'media');
+	console.log('Not opying Vue dist to media directory lol...');
+	// const uiDistPath = path.join(__dirname, 'ui', 'dist');
+	// const mediaPath = path.join(__dirname, 'media');
 
-	if (fs.existsSync(uiDistPath)) {
-		copyDir(uiDistPath, mediaPath);
-		console.log('Vue dist copied to media directory');
-	} else {
-		console.warn('Vue dist directory not found at:', uiDistPath);
-	}
+	// if (fs.existsSync(uiDistPath)) {
+	// 	copyDir(uiDistPath, mediaPath);
+	// 	console.log('Vue dist copied to media directory');
+	// } else {
+	// 	console.warn('Vue dist directory not found at:', uiDistPath);
+	// }
 }
 
 main().catch(e => {
